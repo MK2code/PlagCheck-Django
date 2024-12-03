@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="title" content="File Explorer">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="language" content="English">
+    <meta name="author" content="Your Name Here">
+
+    <title>File Explorer</title>
+
+    <!-- bootstrap file -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<!-- bootstrap file-->
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+
+<!-- main css -->
+<link rel="stylesheet" type="text/css" href="{% static "index.css" %}" />
+
+</head>
+
+<body class="container-fluid">
+
+    <header class="row">
+        <!-- Navbar -->
+        <nav class="navbar navbar-inverse navbar-fixed-top">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button class="navbar-toggle" data-toggle="collapse" data-target="#mainNavBar">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="{% url 'file_explorer' %}">Website:PlagCheck  File Explorer</a>
+                </div>
+                <div class="collapse navbar-collapse" id="mainNavBar">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="{% url 'index' %}">Home</a></li>
+                        <li><a href="{% url 'file_explorer' %}">Manage Files</a></li>
+                        <li><a href="{% url 'select_folders' %}">Generate Report</a></li>
+                        <li><a href="{% url 'logout' %}"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+                       
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'file_explorer' %}">Root</a></li>
+        <!-- Add dynamic breadcrumb items based on current folder -->
+      </ol>
+    </nav>
+
+    <br>
+    <br>
+    <br>
+
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <h1>Welcome to Your File Explorer</h1>
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              {{ form.as_p }}
+              <!-- Implement drag-and-drop zone -->
+            <div id="dropZone" class="text-center p-5 border border-dashed mb-3">
+              <p>Drag and drop files here to upload</p>
+            </div>
+              <div class="text-center">
+                <button type="submit" class="btn btn-primary">Upload</button>
+              </div>
+            </form>
+            <br>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <input type="text" class="form-control" placeholder="Search files and folders...">
+              </div>
+              <div class="col-md-6 text-right">
+                <div class="btn-group" role="group">
+                  <button type="button" class="btn btn-secondary" id="listView">List</button>
+                  <button type="button" class="btn btn-secondary" id="gridView">Grid</button>
+                </div>
+                <select class="form-control d-inline-block w-auto">
+                  <option>Sort by Name</option>
+                  <option>Sort by Date</option>
+                  <option>Sort by Size</option>
+                </select>
+              </div>
+            </div>
+            
+            
+
+            <h1>View the uploaded files and folders</h1>
+            <ul class="list-group">
+              {% for folder in folders %}
+              <li class="list-group-item">
+                <span class="badge"><a href="{% url 'delete_file' folder.id %}"><i class="fa fa-trash"></i></a></span>
+                <strong>{{ folder.name }}</strong>
+                <ul class="list-group">
+                  {% for file in folder.file_set.all %}
+                  <li class="list-group-item">
+                    <span class="badge"><a href="{% url 'delete_file' file.id %}"><i class="fa fa-trash"></i></a></span>
+                    {{ file.name }}
+                  </li>
+                  {% endfor %}
+                </ul>
+              </li>
+              {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js">
+      const dropZone = document.getElementById('drop-zone');
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    });
+
+    function handleFiles(files) {
+        const formData = new FormData(document.getElementById('file-upload-form'));
+        for (let i = 0; i < files.length; i++) {
+            formData.append('file', files[i]);
+        }
+        uploadFiles(formData);
+    }
+
+    function uploadFiles(formData) {
+        fetch("{% url 'file_upload_ajax' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error uploading files');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+    </script>
+</body>
+
+</html>
