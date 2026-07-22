@@ -1,6 +1,7 @@
 
 import os
 from pathlib import Path
+from decouple import config, Csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -10,12 +11,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = ""
+SECRET_KEY = config('DJANGO_SECRET_KEY', default='changeme')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DJANGO_DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['']
+ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='127.0.0.1,localhost', cast=Csv())
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 # Application definition
@@ -99,7 +100,8 @@ AUTH_PASSWORD_VALIDATORS = [
     # },
 ]
 
-CSRF_TRUSTED_ORIGINS = ['']
+trusted_origins = config('CSRF_TRUSTED_ORIGINS', default='')
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in trusted_origins.split(',')] if trusted_origins else []
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Internationalization
@@ -126,9 +128,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='')
+
+# OCR CONFIG
+TESSERACT_CMD = config('TESSERACT_CMD', default='/usr/bin/tesseract')
+POPPLER_PATH = config('POPPLER_PATH', default='')
 
 
 
@@ -146,4 +155,4 @@ EMAIL_USE_TLS = True
 # }
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, config('MEDIA_ROOT', default='media'))

@@ -11,13 +11,18 @@ import pytesseract
 from pdf2image import convert_from_path
 
 
+from django.conf import settings
+
 def process_pdf_to_text(pdf_file, folder_name):
-    pytesseract.pytesseract.tesseract_cmd = (
-        r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
-    )
+    pytesseract.pytesseract.tesseract_cmd = settings.TESSERACT_CMD
     pdf_path = os.path.splitext(pdf_file.name)
     pdf_name = pdf_path[0]
-    images = convert_from_path(pdf_file.temporary_file_path(),poppler_path=r"C:\Users\kumaw\Desktop\Website\project\poppler\Library\bin")
+    
+    convert_kwargs = {}
+    if settings.POPPLER_PATH:
+        convert_kwargs['poppler_path'] = settings.POPPLER_PATH
+        
+    images = convert_from_path(pdf_file.temporary_file_path(), **convert_kwargs)
     text_content = ""
     for i, image in enumerate(images):
         text = pytesseract.image_to_string(image)
